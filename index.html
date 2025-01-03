@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gensokyo Radio Player</title>
     <script>
-        async function fetchAndPlay() {
+        let streamUrl = null;
+
+        async function fetchStreamUrl() {
             try {
                 // Gensokyo Radio APIから現在の情報を取得
                 const response = await fetch('https://gensokyoradio.net/api/station/playing/');
@@ -16,8 +18,6 @@
 
                 // ストリームキーを取得し、ストリームURLを生成
                 const streams = data.SERVERINFO.STREAMS;
-                let streamUrl = null;
-
                 for (const key in streams) {
                     if (streams[key].BITRATE) { // 有効なビットレートがある場合
                         streamUrl = `https://stream.gensokyoradio.net/${key}`;
@@ -29,24 +29,38 @@
                     throw new Error('No available streams found');
                 }
 
-                // オーディオ要素にストリームURLを設定して再生
-                const audioElement = document.getElementById('radioPlayer');
-                audioElement.src = streamUrl;
-
-                // ユーザー操作なしで再生が必要な場合
-                await audioElement.play();
-                console.log('Now playing:', streamUrl);
+                console.log('Stream URL fetched:', streamUrl);
             } catch (error) {
-                console.error('Error:', error);
-                alert('Error: ' + error.message);
+                console.error('Error fetching stream URL:', error);
+                alert('Error fetching stream URL: ' + error.message);
             }
         }
 
-        // ページ読み込み時に実行
-        window.onload = fetchAndPlay;
+        function playAudio() {
+            if (!streamUrl) {
+                alert('Stream URL not ready yet. Please wait and try again.');
+                return;
+            }
+
+            const audioElement = document.getElementById('radioPlayer');
+            audioElement.src = streamUrl;
+
+            audioElement.play().then(() => {
+                console.log('Now playing:', streamUrl);
+            }).catch((error) => {
+                console.error('Error playing audio:', error);
+                alert('Error playing audio: ' + error.message);
+            });
+        }
+
+        // ページ読み込み時にストリームURLを取得
+        window.onload = fetchStreamUrl;
     </script>
 </head>
-<body style="background-color: white; margin: 0; padding: 0;">
-    <audio id="radioPlayer" autoplay hidden></audio>
+<body style="background-color: white; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh;">
+    <button onclick="playAudio()" style="font-size: 20px; padding: 10px 20px; cursor: pointer;">
+        Play Gensokyo Radio
+    </button>
+    <audio id="radioPlayer" hidden></audio>
 </body>
 </html>
