@@ -6,6 +6,7 @@
     <title>Gensokyo Radio Player</title>
     <script>
         let streamUrl = null;
+        let isPlaying = false; // 再生状態を追跡
 
         async function fetchStreamUrl() {
             try {
@@ -36,21 +37,34 @@
             }
         }
 
-        async function playAudio() {
+        async function toggleAudio() {
+            const audioElement = document.getElementById('radioPlayer');
+            const toggleButton = document.getElementById('toggleButton');
+
             if (!streamUrl) {
                 alert('Stream URL not ready yet. Please wait and try again.');
                 return;
             }
 
-            const audioElement = document.getElementById('radioPlayer');
-            audioElement.src = streamUrl;
-
-            try {
-                await audioElement.play();
-                console.log('Now playing:', streamUrl);
-            } catch (error) {
-                console.error('Error playing audio:', error);
-                alert('Error playing audio: ' + error.message);
+            if (isPlaying) {
+                // 停止処理
+                audioElement.pause();
+                audioElement.currentTime = 0; // 再生位置をリセット
+                toggleButton.textContent = 'Play Gensokyo Radio';
+                isPlaying = false;
+                console.log('Audio stopped');
+            } else {
+                // 再生処理
+                audioElement.src = streamUrl;
+                try {
+                    await audioElement.play();
+                    toggleButton.textContent = 'Stop Gensokyo Radio';
+                    isPlaying = true;
+                    console.log('Now playing:', streamUrl);
+                } catch (error) {
+                    console.error('Error playing audio:', error);
+                    alert('Error playing audio: ' + error.message);
+                }
             }
         }
 
@@ -59,7 +73,7 @@
     </script>
 </head>
 <body style="background-color: white; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh;">
-    <button onclick="playAudio()" style="font-size: 20px; padding: 10px 20px; cursor: pointer;">
+    <button id="toggleButton" onclick="toggleAudio()" style="font-size: 20px; padding: 10px 20px; cursor: pointer;">
         Play Gensokyo Radio
     </button>
     <audio id="radioPlayer" hidden></audio>
