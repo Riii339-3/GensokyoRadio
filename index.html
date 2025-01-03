@@ -14,14 +14,13 @@
                 }
                 const data = await response.json();
 
-                // 最初に見つかった利用可能なストリームURLを取得
+                // ストリームキーを取得し、ストリームURLを生成
                 const streams = data.SERVERINFO.STREAMS;
                 let streamUrl = null;
 
-                for (const streamId in streams) {
-                    const streamInfo = streams[streamId];
-                    if (streamInfo.BITRATE) { // ビットレートが設定されている場合
-                        streamUrl = `https://stream.gensokyoradio.net/${streamId}.mp3`;
+                for (const key in streams) {
+                    if (streams[key].BITRATE) { // 有効なビットレートがある場合
+                        streamUrl = `https://stream.gensokyoradio.net/${key}`;
                         break;
                     }
                 }
@@ -33,9 +32,13 @@
                 // オーディオ要素にストリームURLを設定して再生
                 const audioElement = document.getElementById('radioPlayer');
                 audioElement.src = streamUrl;
-                audioElement.play();
+
+                // ユーザー操作なしで再生が必要な場合
+                await audioElement.play();
+                console.log('Now playing:', streamUrl);
             } catch (error) {
                 console.error('Error:', error);
+                alert('Error: ' + error.message);
             }
         }
 
