@@ -36,7 +36,7 @@
             }
         }
 
-        function playAudio() {
+        async function playAudio() {
             if (!streamUrl) {
                 alert('Stream URL not ready yet. Please wait and try again.');
                 return;
@@ -45,12 +45,13 @@
             const audioElement = document.getElementById('radioPlayer');
             audioElement.src = streamUrl;
 
-            audioElement.play().then(() => {
+            try {
+                await audioElement.play();
                 console.log('Now playing:', streamUrl);
-            }).catch((error) => {
+            } catch (error) {
                 console.error('Error playing audio:', error);
                 alert('Error playing audio: ' + error.message);
-            });
+            }
         }
 
         // ページ読み込み時にストリームURLを取得
