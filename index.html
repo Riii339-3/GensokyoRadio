@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gensokyo Radio Player</title>
     <style>
-        /* 同じスタイル */
         body {
             margin: 0;
             font-family: Arial, sans-serif;
@@ -124,6 +123,7 @@
             padding: 5px 10px;
             border-radius: 5px;
             cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -134,32 +134,25 @@
             <div id="artist" class="artist">Please wait...</div>
         </div>
         <div class="controls">
-            <button onclick="toggleList('historyList')">履歴を表示</button>
-            <button onclick="toggleList('favoritesList')">お気に入りを表示</button>
+            <button id="addToFavoritesButton" onclick="addCurrentToFavorites()">お気に入り追加</button>
         </div>
         <div class="controls">
             <button id="playPauseButton" onclick="togglePlayPause()">Play</button>
-            <div class="progress-bar-container">
-                <div id="currentTime" class="time">0:00</div>
-                <div class="progress-bar">
-                    <div id="progress" class="progress"></div>
-                </div>
-                <div id="durationTime" class="time">0:00</div>
-            </div>
+            <button onclick="playFavorites()">お気に入り再生</button>
         </div>
-        
+        <div class="progress-bar-container">
+            <div id="currentTime" class="time">0:00</div>
+            <div class="progress-bar">
+                <div id="progress" class="progress"></div>
+            </div>
+            <div id="durationTime" class="time">0:00</div>
+        </div>
     </div>
-    <div id="historyList" class="list-container">
-        <!-- 履歴リストがここに表示される -->
-    </div>
-
     <div id="favoritesList" class="list-container">
         <!-- お気に入りリストがここに表示される -->
     </div>
-
     <audio id="audioPlayer" hidden></audio>
     <script>
-        const historyList = document.getElementById('historyList');
         const favoritesList = document.getElementById('favoritesList');
         const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
         let streamUrl = null;
@@ -167,7 +160,7 @@
         let duration = 0;
         let played = 0;
         let currentSongId = null;
-        let intervalId = null;
+        let currentFavoriteIndex = 0;
 
         async function fetchStreamInfo() {
             try {
@@ -185,7 +178,6 @@
 
                 if (!streamUrl) throw new Error('No valid stream found');
 
-                // 曲が変わったかどうか確認
                 const newSongId = data.SONGDATA.SONGID;
                 if (newSongId !== currentSongId) {
                     currentSongId = newSongId;
@@ -197,7 +189,6 @@
         }
 
         function updateSongInfo(data) {
-            // 楽曲情報の更新
             const songInfo = data.SONGINFO;
             const albumArtUrl = `https://gensokyoradio.net/images/albums/500/${data.MISC.ALBUMART}`;
 
@@ -207,106 +198,13 @@
 
             duration = data.SONGTIMES.DURATION || 0;
             played = data.SONGTIMES.PLAYED || 0;
-
-            updateProgressBar();
-            updateTimes();
-
-            // 通知の更新
-            updateNotification(songInfo.TITLE, songInfo.ARTIST, albumArtUrl);
         }
 
-        function togglePlayPause() {
-            const audio = document.getElementById('audioPlayer');
-            const button = document.getElementById('playPauseButton');
+        function addCurrentToFavorites() {
+            const title = document.getElementById('title').textContent;
+            const artist = document.getElementById('artist').textContent;
+            const albumArt = document.getElementById('albumArt').src;
 
-            if (!streamUrl) {
-                alert('Stream URL is not ready yet.');
-                return;
-            }
-
-            if (isPlaying) {
-                audio.pause();
-                button.textContent = 'Play';
-                isPlaying = false;
-            } else {
-                // 再生前に曲情報を更新
-                fetchStreamInfo();
-                audio.src = streamUrl;
-                audio.play();
-                button.textContent = 'Pause';
-                isPlaying = true;
-            }
-        }
-
-        function updateProgressBar() {
-            const progress = document.getElementById('progress');
-            clearInterval(intervalId);
-            intervalId = setInterval(() => {
-                if (isPlaying) {
-                    if (played >= duration) {
-                        fetchStreamInfo(); // 曲の情報を更新
-                        return;
-                    }
-                    played++;
-                    const progressPercentage = (played / duration) * 100;
-                    progress.style.width = progressPercentage + '%';
-                    updateTimes();
-                }
-            }, 1000);
-        }
-
-        function updateTimes() {
-            const currentTimeElem = document.getElementById('currentTime');
-            const durationTimeElem = document.getElementById('durationTime');
-
-            currentTimeElem.textContent = formatTime(played);
-            durationTimeElem.textContent = formatTime(duration);
-        }
-
-        function formatTime(seconds) {
-            const minutes = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${minutes}:${secs.toString().padStart(2, '0')}`;
-        }
-
-        function updateNotification(title, artist, albumArt) {
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.metadata = new MediaMetadata({
-                    title: title,
-                    artist: artist,
-                    artwork: [
-                        { src: albumArt, sizes: '300x300', type: 'image/jpeg' }
-                    ]
-                });
-            }
-        }
-        function toggleList(listId) {
-            const list = document.getElementById(listId);
-            list.style.display = list.style.display === 'none' || list.style.display === '' ? 'block' : 'none';
-        }
-
-        async function fetchHistory() {
-            try {
-                const response = await fetch('https://gensokyoradio.net/api/station/history/');
-                if (!response.ok) throw new Error('Failed to fetch history');
-                const data = await response.json();
-
-                historyList.innerHTML = data.HISTORY.map(item => `
-                    <div class="list-item">
-                        <img src="https://gensokyoradio.net/images/albums/${item.ALBUMART}" alt="${item.TITLE}">
-                        <div>
-                            <div>${item.TITLE}</div>
-                            <div>${item.ARTIST}</div>
-                        </div>
-                        <button onclick="addToFavorites('${item.TITLE}', '${item.ARTIST}', 'https://gensokyoradio.net/images/albums/500/${item.ALBUMART}', 'https://stream.gensokyoradio.net/high.mp3')">お気に入り追加</button>
-                    </div>
-                `).join('');
-            } catch (error) {
-                console.error('Error fetching history:', error);
-            }
-        }
-
-        function addToFavorites(title, artist, albumArt, streamUrl) {
             const exists = favorites.find(fav => fav.title === title && fav.artist === artist);
             if (!exists) {
                 favorites.push({ title, artist, albumArt, streamUrl });
@@ -323,27 +221,33 @@
                         <div>${item.title}</div>
                         <div>${item.artist}</div>
                     </div>
-                    <button onclick="removeFromFavorites('${item.title}', '${item.artist}')">お気に入り解除</button>
                 </div>
             `).join('');
         }
 
-        function removeFromFavorites(title, artist) {
-            const index = favorites.findIndex(fav => fav.title === title && fav.artist === artist);
-            if (index !== -1) {
-                favorites.splice(index, 1);
-                localStorage.setItem('favorites', JSON.stringify(favorites));
-                renderFavorites();
+        function playFavorites() {
+            if (favorites.length === 0) {
+                alert('お気に入りが空です。');
+                return;
             }
+
+            const audio = document.getElementById('audioPlayer');
+            const favorite = favorites[currentFavoriteIndex];
+
+            audio.src = favorite.streamUrl;
+            audio.play();
+            isPlaying = true;
+
+            audio.onended = () => {
+                currentFavoriteIndex = (currentFavoriteIndex + 1) % favorites.length;
+                playFavorites();
+            };
         }
-
-        fetchHistory();
-        renderFavorites();
-
 
         // 初期化
         fetchStreamInfo();
         setInterval(fetchStreamInfo, 15000); // 15秒ごとに曲情報をポーリング
+        renderFavorites();
     </script>
 </body>
 </html>
