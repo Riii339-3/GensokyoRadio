@@ -115,12 +115,12 @@
 
                 // 楽曲情報の更新
                 const songInfo = data.SONGINFO;
-                const misc = data.MISC;
+                const albumId = data.SONGDATA.ALBUMID;
 
                 document.getElementById('title').textContent = songInfo.TITLE || 'Unknown Title';
                 document.getElementById('artist').textContent = songInfo.ARTIST || 'Unknown Artist';
-                document.getElementById('albumArt').src = misc.ALBUMART 
-                    ? `https://gensokyoradio.net/images/albums/${misc.ALBUMART}`
+                document.getElementById('albumArt').src = albumId
+                    ? `https://gensokyoradio.net/images/albums/${albumId}/`
                     : 'https://via.placeholder.com/300x300?text=No+Image';
 
                 duration = data.SONGTIMES.DURATION || 0;
