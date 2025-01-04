@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gensokyo Radio Player</title>
     <style>
+        /* 同じスタイル */
         body {
             margin: 0;
             font-family: Arial, sans-serif;
-            background-color: #2b0631; /* 紫を基調 */
+            background-color: #2b0631;
             color: white;
             display: flex;
             justify-content: center;
@@ -112,6 +113,8 @@
         let isPlaying = false;
         let duration = 0;
         let played = 0;
+        let currentSongId = null;
+        let intervalId = null;
 
         async function fetchStreamInfo() {
             try {
@@ -129,25 +132,34 @@
 
                 if (!streamUrl) throw new Error('No valid stream found');
 
-                // 楽曲情報の更新
-                const songInfo = data.SONGINFO;
-                const albumArtUrl = `https://gensokyoradio.net/images/albums/500/${data.MISC.ALBUMART}`;
-
-                document.getElementById('title').textContent = songInfo.TITLE || 'Unknown Title';
-                document.getElementById('artist').textContent = songInfo.ARTIST || 'Unknown Artist';
-                document.getElementById('albumArt').src = albumArtUrl;
-
-                duration = data.SONGTIMES.DURATION || 0;
-                played = data.SONGTIMES.PLAYED || 0;
-
-                updateProgressBar();
-                updateTimes();
-
-                // 通知の更新
-                updateNotification(songInfo.TITLE, songInfo.ARTIST, albumArtUrl);
+                // 曲が変わったかどうか確認
+                const newSongId = data.SONGDATA.SONGID;
+                if (newSongId !== currentSongId) {
+                    currentSongId = newSongId;
+                    updateSongInfo(data);
+                }
             } catch (error) {
                 console.error('Error fetching stream info:', error);
             }
+        }
+
+        function updateSongInfo(data) {
+            // 楽曲情報の更新
+            const songInfo = data.SONGINFO;
+            const albumArtUrl = `https://gensokyoradio.net/images/albums/${data.MISC.ALBUMART}`;
+
+            document.getElementById('title').textContent = songInfo.TITLE || 'Unknown Title';
+            document.getElementById('artist').textContent = songInfo.ARTIST || 'Unknown Artist';
+            document.getElementById('albumArt').src = albumArtUrl;
+
+            duration = data.SONGTIMES.DURATION || 0;
+            played = data.SONGTIMES.PLAYED || 0;
+
+            updateProgressBar();
+            updateTimes();
+
+            // 通知の更新
+            updateNotification(songInfo.TITLE, songInfo.ARTIST, albumArtUrl);
         }
 
         function togglePlayPause() {
@@ -173,8 +185,13 @@
 
         function updateProgressBar() {
             const progress = document.getElementById('progress');
-            setInterval(() => {
-                if (isPlaying && played < duration) {
+            clearInterval(intervalId);
+            intervalId = setInterval(() => {
+                if (isPlaying) {
+                    if (played >= duration) {
+                        fetchStreamInfo(); // 曲の情報を更新
+                        return;
+                    }
                     played++;
                     const progressPercentage = (played / duration) * 100;
                     progress.style.width = progressPercentage + '%';
@@ -209,7 +226,9 @@
             }
         }
 
-        window.onload = fetchStreamInfo;
+        // 初期化
+        fetchStreamInfo();
+        setInterval(fetchStreamInfo, 15000); // 15秒ごとに曲情報をポーリング
     </script>
 </body>
 </html>
