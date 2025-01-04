@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Favorite Player</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #2b0631;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .player {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .album-art {
+            width: 100%;
+            max-width: 300px;
+            border-radius: 10px;
+        }
+
+        .info {
+            margin-top: 15px;
+        }
+
+        .controls {
+            margin-top: 20px;
+        }
+
+        button {
+            background-color: #a84fb0;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:disabled {
+            background-color: #4b1662;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="player">
+        <img id="albumArt" class="album-art" src="" alt="Album Art">
+        <div class="info">
+            <div id="title" class="title">No song playing</div>
+            <div id="artist" class="artist">Add some favorites to get started</div>
+        </div>
+        <div class="controls">
+            <button onclick="previousTrack()">⏮️ Previous</button>
+            <button onclick="togglePlay()">▶️ Play</button>
+            <button onclick="nextTrack()">⏭️ Next</button>
+            <button onclick="toggleLoop()">🔁 Loop: Off</button>
+            <button onclick="toggleShuffle()">🔀 Shuffle: Off</button>
+            <a href="index.html"><button>Back to Main</button></a>
+        </div>
+    </div>
+
+    <audio id="audioPlayer" hidden></audio>
+
+    <script>
+        const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+        let currentIndex = 0;
+        let isPlaying = false;
+        let loopMode = 'none'; // 'none', 'one', 'all'
+        let shuffle = false;
+
+        const audioPlayer = document.getElementById('audioPlayer');
+        const albumArt = document.getElementById('albumArt');
+        const title = document.getElementById('title');
+        const artist = document.getElementById('artist');
+
+        // 初期データの読み込み
+        function loadTrack(index) {
+            if (favorites.length === 0) {
+                title.textContent = 'No song playing';
+                artist.textContent = 'Add some favorites to get started';
+                albumArt.src = '';
+                audioPlayer.src = '';
+                return;
+            }
+
+            const track = favorites[index];
+            title.textContent = track.title;
+            artist.textContent = track.artist;
+            albumArt.src = track.albumArt;
+            audioPlayer.src = track.streamUrl;
+        }
+
+        // 再生/一時停止の切り替え
+        function togglePlay() {
+            if (!audioPlayer.src) return;
+
+            if (isPlaying) {
+                audioPlayer.pause();
+                isPlaying = false;
+                document.querySelector('button[onclick="togglePlay()"]').textContent = '▶️ Play';
+            } else {
+                audioPlayer.play();
+                isPlaying = true;
+                document.querySelector('button[onclick="togglePlay()"]').textContent = '⏸️ Pause';
+            }
+        }
+
+        // 次のトラックを再生
+        function nextTrack() {
+            if (shuffle) {
+                currentIndex = Math.floor(Math.random() * favorites.length);
+            } else {
+                currentIndex = (currentIndex + 1) % favorites.length;
+            }
+
+            if (loopMode === 'one') {
+                // 一曲ループの場合、現在のトラックを再生し続ける
+                audioPlayer.currentTime = 0;
+            } else {
+                loadTrack(currentIndex);
+                if (isPlaying) audioPlayer.play();
+            }
+        }
+
+        // 前のトラックを再生
+        function previousTrack() {
+            if (shuffle) {
+                currentIndex = Math.floor(Math.random() * favorites.length);
+            } else {
+                currentIndex = (currentIndex - 1 + favorites.length) % favorites.length;
+            }
+
+            loadTrack(currentIndex);
+            if (isPlaying) audioPlayer.play();
+        }
+
+        // ループモードの切り替え
+        function toggleLoop() {
+            if (loopMode === 'none') {
+                loopMode = 'all';
+                document.querySelector('button[onclick="toggleLoop()"]').textContent = '🔁 Loop: All';
+            } else if (loopMode === 'all') {
+                loopMode = 'one';
+                document.querySelector('button[onclick="toggleLoop()"]').textContent = '🔁 Loop: One';
+            } else {
+                loopMode = 'none';
+                document.querySelector('button[onclick="toggleLoop()"]').textContent = '🔁 Loop: Off';
+            }
+        }
+
+        // シャッフルの切り替え
+        function toggleShuffle() {
+            shuffle = !shuffle;
+            document.querySelector('button[onclick="toggleShuffle()"]').textContent = shuffle
+                ? '🔀 Shuffle: On'
+                : '🔀 Shuffle: Off';
+        }
+
+        // 曲が終わったときの処理
+        audioPlayer.addEventListener('ended', () => {
+            if (loopMode === 'one') {
+                audioPlayer.currentTime = 0;
+                audioPlayer.play();
+            } else if (loopMode === 'all') {
+                nextTrack();
+            } else if (shuffle) {
+                currentIndex = Math.floor(Math.random() * favorites.length);
+                loadTrack(currentIndex);
+                if (isPlaying) audioPlayer.play();
+            } else {
+                currentIndex = (currentIndex + 1) % favorites.length;
+                if (currentIndex === 0) {
+                    isPlaying = false;
+                    document.querySelector('button[onclick="togglePlay()"]').textContent = '▶️ Play';
+                } else {
+                    loadTrack(currentIndex);
+                    if (isPlaying) audioPlayer.play();
+                }
+            }
+        });
+
+        // 初期化
+        loadTrack(currentIndex);
+    </script>
+</body>
+</html>
