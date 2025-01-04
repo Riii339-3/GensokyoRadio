@@ -87,6 +87,43 @@
             background-color: #4b1662;
             cursor: not-allowed;
         }
+        
+        .list-container {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 600px;
+            background-color: #4b1662;
+            border-radius: 10px;
+            padding: 10px;
+            display: none;
+        }
+
+        .list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #a84fb0;
+            padding-bottom: 10px;
+        }
+
+        .list-item img {
+            width: 50px;
+            height: 50px;
+            border-radius: 5px;
+        }
+
+        .list-item div {
+            margin-left: 10px;
+            flex: 1;
+        }
+
+        .list-item button {
+            background-color: #a84fb0;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
     </style>
 </head>
 <body>
@@ -95,6 +132,10 @@
         <div class="info">
             <div id="title" class="title">Loading...</div>
             <div id="artist" class="artist">Please wait...</div>
+        </div>
+        <div class="controls">
+            <button onclick="toggleList('historyList')">履歴を表示</button>
+            <button onclick="toggleList('favoritesList')">お気に入りを表示</button>
         </div>
         <div class="controls">
             <button id="playPauseButton" onclick="togglePlayPause()">Play</button>
@@ -106,9 +147,21 @@
                 <div id="durationTime" class="time">0:00</div>
             </div>
         </div>
+        
     </div>
+    <div id="historyList" class="list-container">
+        <!-- 履歴リストがここに表示される -->
+    </div>
+
+    <div id="favoritesList" class="list-container">
+        <!-- お気に入りリストがここに表示される -->
+    </div>
+
     <audio id="audioPlayer" hidden></audio>
     <script>
+        const historyList = document.getElementById('historyList');
+        const favoritesList = document.getElementById('favoritesList');
+        const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
         let streamUrl = null;
         let isPlaying = false;
         let duration = 0;
@@ -227,6 +280,66 @@
                 });
             }
         }
+        function toggleList(listId) {
+            const list = document.getElementById(listId);
+            list.style.display = list.style.display === 'none' || list.style.display === '' ? 'block' : 'none';
+        }
+
+        async function fetchHistory() {
+            try {
+                const response = await fetch('https://gensokyoradio.net/api/station/history/');
+                if (!response.ok) throw new Error('Failed to fetch history');
+                const data = await response.json();
+
+                historyList.innerHTML = data.HISTORY.map(item => `
+                    <div class="list-item">
+                        <img src="https://gensokyoradio.net/images/albums/${item.ALBUMART}" alt="${item.TITLE}">
+                        <div>
+                            <div>${item.TITLE}</div>
+                            <div>${item.ARTIST}</div>
+                        </div>
+                        <button onclick="addToFavorites('${item.TITLE}', '${item.ARTIST}', 'https://gensokyoradio.net/images/albums/${item.ALBUMART}', 'https://stream.gensokyoradio.net/high.mp3')">お気に入り追加</button>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error fetching history:', error);
+            }
+        }
+
+        function addToFavorites(title, artist, albumArt, streamUrl) {
+            const exists = favorites.find(fav => fav.title === title && fav.artist === artist);
+            if (!exists) {
+                favorites.push({ title, artist, albumArt, streamUrl });
+                localStorage.setItem('favorites', JSON.stringify(favorites));
+                renderFavorites();
+            }
+        }
+
+        function renderFavorites() {
+            favoritesList.innerHTML = favorites.map(item => `
+                <div class="list-item">
+                    <img src="${item.albumArt}" alt="${item.title}">
+                    <div>
+                        <div>${item.title}</div>
+                        <div>${item.artist}</div>
+                    </div>
+                    <button onclick="removeFromFavorites('${item.title}', '${item.artist}')">お気に入り解除</button>
+                </div>
+            `).join('');
+        }
+
+        function removeFromFavorites(title, artist) {
+            const index = favorites.findIndex(fav => fav.title === title && fav.artist === artist);
+            if (index !== -1) {
+                favorites.splice(index, 1);
+                localStorage.setItem('favorites', JSON.stringify(favorites));
+                renderFavorites();
+            }
+        }
+
+        fetchHistory();
+        renderFavorites();
+
 
         // 初期化
         fetchStreamInfo();
