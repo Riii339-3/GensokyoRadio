@@ -123,13 +123,13 @@
 
         async function fetchHistory() {
             try {
-                const response = await fetch('https://gensokyoradio.net/api/station/history/');
+                const response = await fetch('https://gensokyoradio.net/api/station/playing/');
                 if (!response.ok) throw new Error('Failed to fetch history');
                 const data = await response.json();
 
                 historyList.innerHTML = data.HISTORY.map(item => `
                     <div class="list-item">
-                        <img src="https://gensokyoradio.net/images/albums/${item.ALBUMART}" alt="${item.TITLE}">
+                        <img src="https://gensokyoradio.net/images/albums/500/${item.ALBUMART}" alt="${item.TITLE}">
                         <div>
                             <div>${item.TITLE}</div>
                             <div>${item.ARTIST}</div>
