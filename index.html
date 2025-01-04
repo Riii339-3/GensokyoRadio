@@ -146,7 +146,7 @@
         function updateSongInfo(data) {
             // 楽曲情報の更新
             const songInfo = data.SONGINFO;
-            const albumArtUrl = `https://gensokyoradio.net/images/albums/${data.MISC.ALBUMART}`;
+            const albumArtUrl = `https://gensokyoradio.net/images/albums/500/${data.MISC.ALBUMART}`;
 
             document.getElementById('title').textContent = songInfo.TITLE || 'Unknown Title';
             document.getElementById('artist').textContent = songInfo.ARTIST || 'Unknown Artist';
