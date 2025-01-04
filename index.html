@@ -176,6 +176,8 @@
                 button.textContent = 'Play';
                 isPlaying = false;
             } else {
+                // 再生前に曲情報を更新
+                fetchStreamInfo();
                 audio.src = streamUrl;
                 audio.play();
                 button.textContent = 'Pause';
