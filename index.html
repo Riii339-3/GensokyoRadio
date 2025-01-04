@@ -45,12 +45,24 @@
             margin-top: 20px;
         }
 
+        .progress-bar-container {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .time {
+            font-size: 12px;
+            margin: 0 10px;
+            width: 40px;
+            text-align: center;
+        }
+
         .progress-bar {
-            width: 100%;
+            flex: 1;
             height: 5px;
             background-color: #4b1662;
             border-radius: 5px;
-            margin-top: 10px;
             overflow: hidden;
         }
 
@@ -85,8 +97,12 @@
         </div>
         <div class="controls">
             <button id="playPauseButton" onclick="togglePlayPause()">Play</button>
-            <div class="progress-bar">
-                <div id="progress" class="progress"></div>
+            <div class="progress-bar-container">
+                <div id="currentTime" class="time">0:00</div>
+                <div class="progress-bar">
+                    <div id="progress" class="progress"></div>
+                </div>
+                <div id="durationTime" class="time">0:00</div>
             </div>
         </div>
     </div>
@@ -115,21 +131,20 @@
 
                 // 楽曲情報の更新
                 const songInfo = data.SONGINFO;
-                const albumId = data.SONGDATA.ALBUMID;
+                const albumArtUrl = `https://gensokyoradio.net/images/albums/500/${data.MISC.ALBUMART}`;
 
                 document.getElementById('title').textContent = songInfo.TITLE || 'Unknown Title';
                 document.getElementById('artist').textContent = songInfo.ARTIST || 'Unknown Artist';
-                document.getElementById('albumArt').src = albumId
-                    ? `https://gensokyoradio.net/images/albums/${albumId}/`
-                    : 'https://via.placeholder.com/300x300?text=No+Image';
+                document.getElementById('albumArt').src = albumArtUrl;
 
                 duration = data.SONGTIMES.DURATION || 0;
                 played = data.SONGTIMES.PLAYED || 0;
 
                 updateProgressBar();
+                updateTimes();
 
                 // 通知の更新
-                updateNotification(songInfo.TITLE, songInfo.ARTIST, document.getElementById('albumArt').src);
+                updateNotification(songInfo.TITLE, songInfo.ARTIST, albumArtUrl);
             } catch (error) {
                 console.error('Error fetching stream info:', error);
             }
@@ -163,8 +178,23 @@
                     played++;
                     const progressPercentage = (played / duration) * 100;
                     progress.style.width = progressPercentage + '%';
+                    updateTimes();
                 }
             }, 1000);
+        }
+
+        function updateTimes() {
+            const currentTimeElem = document.getElementById('currentTime');
+            const durationTimeElem = document.getElementById('durationTime');
+
+            currentTimeElem.textContent = formatTime(played);
+            durationTimeElem.textContent = formatTime(duration);
+        }
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${minutes}:${secs.toString().padStart(2, '0')}`;
         }
 
         function updateNotification(title, artist, albumArt) {
