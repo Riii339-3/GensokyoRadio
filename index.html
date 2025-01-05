@@ -1,350 +1,241 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gensokyo Radio Player</title>
-    <style>
-        /* 同じスタイル */
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #2b0631;
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            flex-direction: column;
-        }
-
-        .player {
-            text-align: center;
-            max-width: 300px;
-        }
-
-        .album-art {
-            width: 100%;
-            border-radius: 10px;
-        }
-
-        .info {
-            margin-top: 15px;
-        }
-
-        .title {
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        .artist {
-            font-size: 14px;
-            margin-top: 5px;
-        }
-
-        .controls {
-            margin-top: 20px;
-        }
-
-        .progress-bar-container {
-            display: flex;
-            align-items: center;
-            margin-top: 10px;
-        }
-
-        .time {
-            font-size: 12px;
-            margin: 0 10px;
-            width: 40px;
-            text-align: center;
-        }
-
-        .progress-bar {
-            flex: 1;
-            height: 5px;
-            background-color: #4b1662;
-            border-radius: 5px;
-            overflow: hidden;
-        }
-
-        .progress {
-            height: 100%;
-            width: 0;
-            background-color: #a84fb0;
-        }
-
-        button {
-            background-color: #a84fb0;
-            border: none;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        button:disabled {
-            background-color: #4b1662;
-            cursor: not-allowed;
-        }
-        
-        .list-container {
-            margin-top: 20px;
-            width: 100%;
-            max-width: 600px;
-            background-color: #4b1662;
-            border-radius: 10px;
-            padding: 10px;
-            display: none;
-        }
-
-        .list-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #a84fb0;
-            padding-bottom: 10px;
-        }
-
-        .list-item img {
-            width: 50px;
-            height: 50px;
-            border-radius: 5px;
-        }
-
-        .list-item div {
-            margin-left: 10px;
-            flex: 1;
-        }
-
-        .list-item button {
-            background-color: #a84fb0;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gensokyo Radio Player</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #2e003e;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .player {
+      background-color: #4b0082;
+      padding: 20px;
+      border-radius: 10px;
+      width: 300px;
+      text-align: center;
+    }
+    .album-art {
+      margin: 20px 0;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 200px;
+      height: auto;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .controls {
+      margin-top: 20px;
+    }
+    .controls button {
+      background-color: #9400d3;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .progress {
+      margin: 20px 0;
+      display: flex;
+      align-items: center;
+    }
+    .progress span {
+      flex: 1;
+      text-align: center;
+    }
+    .progress-bar {
+      flex: 3;
+      height: 10px;
+      background-color: #d8bfd8;
+      border-radius: 5px;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-bar div {
+      height: 100%;
+      background-color: #ba55d3;
+      width: 0;
+      transition: width 0.1s linear;
+    }
+    .favorites {
+      margin-top: 20px;
+    }
+    .favorites ul {
+      list-style: none;
+      padding: 0;
+    }
+    .favorites li {
+      background: #4b0082;
+      padding: 5px;
+      margin: 5px 0;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .favorites button {
+      background-color: #9400d3;
+      border: none;
+      color: white;
+      padding: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-    <div class="player">
-        <img id="albumArt" class="album-art" src="" alt="Album Art">
-        <div class="info">
-            <div id="title" class="title">Loading...</div>
-            <div id="artist" class="artist">Please wait...</div>
-        </div>
-        <div class="controls">
-            <button onclick="toggleList('historyList')">履歴を表示</button>
-            <button onclick="toggleList('favoritesList')">お気に入りを表示</button>
-        </div>
-        <div class="controls">
-            <button id="playPauseButton" onclick="togglePlayPause()">Play</button>
-            <div class="progress-bar-container">
-                <div id="currentTime" class="time">0:00</div>
-                <div class="progress-bar">
-                    <div id="progress" class="progress"></div>
-                </div>
-                <div id="durationTime" class="time">0:00</div>
-            </div>
-        </div>
-        
+  <div class="player">
+    <h2>Gensokyo Radio</h2>
+    <img id="album-art" class="album-art" src="" alt="Album Art" style="display:none;">
+    <p id="song-info">Loading...</p>
+    <div class="controls">
+      <button id="play-pause">Play</button>
     </div>
-    <div id="historyList" class="list-container">
-        <!-- 履歴リストがここに表示される -->
+    <div class="progress">
+      <span id="current-time">0:00</span>
+      <div class="progress-bar">
+        <div id="progress"></div>
+      </div>
+      <span id="duration">0:00</span>
     </div>
-
-    <div id="favoritesList" class="list-container">
-        <!-- お気に入りリストがここに表示される -->
+    <button id="add-favorite">Add to Favorites</button>
+    <div class="favorites">
+      <button id="show-favorites">Show Favorites</button>
+      <ul id="favorites-list" style="display:none;"></ul>
     </div>
+  </div>
+  <script>
+    const API_URL = 'https://gensokyoradio.net/api/station/playing/';
+    let audio = new Audio();
+    let isPlaying = false;
+    let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
 
-    <audio id="audioPlayer" hidden></audio>
-    <script>
-        const historyList = document.getElementById('historyList');
-        const favoritesList = document.getElementById('favoritesList');
-        const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-        let streamUrl = null;
-        let isPlaying = false;
-        let duration = 0;
-        let played = 0;
-        let currentSongId = null;
-        let intervalId = null;
+    async function fetchSongData() {
+      try {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error('Error fetching song data:', error);
+        alert('Failed to load song data. Please try again later.');
+        return null;
+      }
+    }
 
-        async function fetchStreamInfo() {
-            try {
-                const response = await fetch('https://gensokyoradio.net/api/station/playing/');
-                if (!response.ok) throw new Error('Failed to fetch stream info');
-                const data = await response.json();
+    async function updateSongInfo() {
+      const data = await fetchSongData();
+      if (data) {
+        document.getElementById('song-info').textContent = `${data.SONGINFO.TITLE} by ${data.SONGINFO.ARTIST}`;
 
-                // ストリームURLの取得
-                for (const key in data.SERVERINFO.STREAMS) {
-                    if (data.SERVERINFO.STREAMS[key].BITRATE) {
-                        streamUrl = `https://stream.gensokyoradio.net/${key}`;
-                        break;
-                    }
-                }
-
-                if (!streamUrl) throw new Error('No valid stream found');
-
-                // 曲が変わったかどうか確認
-                const newSongId = data.SONGDATA.SONGID;
-                if (newSongId !== currentSongId) {
-                    currentSongId = newSongId;
-                    updateSongInfo(data);
-                }
-            } catch (error) {
-                console.error('Error fetching stream info:', error);
-            }
+        // Update album art
+        const albumArt = document.getElementById('album-art');
+        if (data.MISC.ALBUMART) {
+          albumArt.src = `https://gensokyoradio.net/images/albums/500/${data.MISC.ALBUMART}`;
+          albumArt.style.display = 'block';
+        } else {
+          albumArt.style.display = 'none';
         }
 
-        function updateSongInfo(data) {
-            // 楽曲情報の更新
-            const songInfo = data.SONGINFO;
-            const albumArtUrl = `https://gensokyoradio.net/images/albums/500/${data.MISC.ALBUMART}`;
-
-            document.getElementById('title').textContent = songInfo.TITLE || 'Unknown Title';
-            document.getElementById('artist').textContent = songInfo.ARTIST || 'Unknown Artist';
-            document.getElementById('albumArt').src = albumArtUrl;
-
-            duration = data.SONGTIMES.DURATION || 0;
-            played = data.SONGTIMES.PLAYED || 0;
-
-            updateProgressBar();
-            updateTimes();
-
-            // 通知の更新
-            updateNotification(songInfo.TITLE, songInfo.ARTIST, albumArtUrl);
+        if (!isPlaying) {
+          const streamId = 1; // Use stream ID 1 as default
+          audio.src = `https://stream.gensokyoradio.net/${streamId}/`;
         }
 
-        async function togglePlay() {
-            if (!audioPlayer.src) return;
+        updateProgressBar(data.SONGTIMES);
+      }
+    }
 
-            if (isPlaying) {
-                audioPlayer.pause();
-                isPlaying = false;
-                document.querySelector('button[onclick="togglePlay()"]').textContent = '▶️ Play';
-            } else {
-                // 再生を開始する前にAPIから最新データを取得して更新
-                const currentTrack = favorites[currentIndex];
-                if (currentTrack) {
-                    title.textContent = currentTrack.title;
-                    artist.textContent = currentTrack.artist;
-                    albumArt.src = currentTrack.albumArt;
-                    audioPlayer.src = currentTrack.streamUrl;
-                }
+    document.getElementById('play-pause').addEventListener('click', async () => {
+      if (!isPlaying) {
+        await updateSongInfo();
+        audio.play();
+        isPlaying = true;
+        document.getElementById('play-pause').textContent = 'Pause';
+      } else {
+        audio.pause();
+        isPlaying = false;
+        document.getElementById('play-pause').textContent = 'Play';
+      }
+    });
 
-                audioPlayer.currentTime = 0; // 再生位置をリセット
-                audioPlayer.play();
-                isPlaying = true;
-                document.querySelector('button[onclick="togglePlay()"]').textContent = '⏸️ Pause';
-            }
+    audio.addEventListener('ended', async () => {
+      isPlaying = false;
+      document.getElementById('play-pause').textContent = 'Play';
+      await updateSongInfo();
+    });
+
+    setInterval(updateSongInfo, 5000); // Update song info every 5 seconds
+
+    function updateProgressBar(songTimes) {
+      const progressBar = document.getElementById('progress');
+      const currentTimeElem = document.getElementById('current-time');
+      const durationElem = document.getElementById('duration');
+
+      const totalDuration = songTimes.DURATION;
+      const startTime = songTimes.SONGSTART;
+
+      const interval = setInterval(() => {
+        const elapsedTime = Math.floor(Date.now() / 1000) - startTime;
+        const remainingTime = totalDuration - elapsedTime;
+        currentTimeElem.textContent = formatTime(elapsedTime);
+        durationElem.textContent = formatTime(totalDuration);
+        progressBar.style.width = `${(elapsedTime / totalDuration) * 100}%`;
+
+        if (remainingTime <= 0) {
+          clearInterval(interval);
         }
+      }, 1000);
+    }
 
-        function updateProgressBar() {
-            const progress = document.getElementById('progress');
-            clearInterval(intervalId);
-            intervalId = setInterval(() => {
-                if (isPlaying) {
-                    if (played >= duration) {
-                        fetchStreamInfo(); // 曲の情報を更新
-                        return;
-                    }
-                    played++;
-                    const progressPercentage = (played / duration) * 100;
-                    progress.style.width = progressPercentage + '%';
-                    updateTimes();
-                }
-            }, 1000);
-        }
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
 
-        function updateTimes() {
-            const currentTimeElem = document.getElementById('currentTime');
-            const durationTimeElem = document.getElementById('durationTime');
+  document.getElementById('add-favorite').addEventListener('click', () => {
+    const songInfo = document.getElementById('song-info').textContent;
+    const albumArt = document.getElementById('album-art').src.split('/').pop();
+    const streamId = 1; // 固定ストリームID (APIから取得する場合は動的に)
 
-            currentTimeElem.textContent = formatTime(played);
-            durationTimeElem.textContent = formatTime(duration);
-        }
-
-        function formatTime(seconds) {
-            const minutes = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${minutes}:${secs.toString().padStart(2, '0')}`;
-        }
-
-        function updateNotification(title, artist, albumArt) {
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.metadata = new MediaMetadata({
-                    title: title,
-                    artist: artist,
-                    artwork: [
-                        { src: albumArt, sizes: '300x300', type: 'image/jpeg' }
-                    ]
-                });
-            }
-        }
-        function toggleList(listId) {
-            const list = document.getElementById(listId);
-            list.style.display = list.style.display === 'none' || list.style.display === '' ? 'block' : 'none';
-        }
-
-        async function fetchHistory() {
-            try {
-                const response = await fetch('https://gensokyoradio.net/api/station/history/');
-                if (!response.ok) throw new Error('Failed to fetch history');
-                const data = await response.json();
-
-                historyList.innerHTML = data.HISTORY.map(item => `
-                    <div class="list-item">
-                        <img src="https://gensokyoradio.net/images/albums/${item.ALBUMART}" alt="${item.TITLE}">
-                        <div>
-                            <div>${item.TITLE}</div>
-                            <div>${item.ARTIST}</div>
-                        </div>
-                        <button onclick="addToFavorites('${item.TITLE}', '${item.ARTIST}', 'https://gensokyoradio.net/images/albums/500/${item.ALBUMART}', 'https://stream.gensokyoradio.net/high.mp3')">お気に入り追加</button>
-                    </div>
-                `).join('');
-            } catch (error) {
-                console.error('Error fetching history:', error);
-            }
-        }
-
-        function addToFavorites(title, artist, albumArt, streamUrl) {
-            const exists = favorites.find(fav => fav.title === title && fav.artist === artist);
-            if (!exists) {
-                favorites.push({ title, artist, albumArt, streamUrl });
-                localStorage.setItem('favorites', JSON.stringify(favorites));
-                renderFavorites();
-            }
-        }
-
-        function renderFavorites() {
-            favoritesList.innerHTML = favorites.map(item => `
-                <div class="list-item">
-                    <img src="${item.albumArt}" alt="${item.title}">
-                    <div>
-                        <div>${item.title}</div>
-                        <div>${item.artist}</div>
-                    </div>
-                    <button onclick="removeFromFavorites('${item.title}', '${item.artist}')">お気に入り解除</button>
-                </div>
-            `).join('');
-        }
-
-        function removeFromFavorites(title, artist) {
-            const index = favorites.findIndex(fav => fav.title === title && fav.artist === artist);
-            if (index !== -1) {
-                favorites.splice(index, 1);
-                localStorage.setItem('favorites', JSON.stringify(favorites));
-                renderFavorites();
-            }
-        }
-
-        fetchHistory();
-        renderFavorites();
+    if (!favorites.some(fav => fav.song === songInfo)) {
+      favorites.push({ song: songInfo, albumArt, streamId });
+      localStorage.setItem('favorites', JSON.stringify(favorites));
+      alert('Added to Favorites!');
+    }
+});
 
 
-        // 初期化
-        fetchStreamInfo();
-        setInterval(fetchStreamInfo, 15000); // 15秒ごとに曲情報をポーリング
-    </script>
+    document.getElementById('show-favorites').addEventListener('click', () => {
+      const list = document.getElementById('favorites-list');
+      list.innerHTML = '';
+      favorites.forEach((favorite, index) => {
+        const li = document.createElement('li');
+        li.textContent = favorite.song;
+
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Remove';
+        deleteButton.addEventListener('click', () => {
+          favorites.splice(index, 1);
+          localStorage.setItem('favorites', JSON.stringify(favorites));
+          list.removeChild(li);
+        });
+
+        li.appendChild(deleteButton);
+        list.appendChild(li);
+      });
+      list.style.display = list.style.display === 'none' ? 'block' : 'none';
+    });
+  </script>
 </body>
 </html>
