@@ -108,7 +108,6 @@
       </div>
       <span id="duration">0:00</span>
     </div>
-    <button id="add-favorite">Add to Favorites</button>
     <div class="favorites">
       <button id="show-favorites">Show Favorites</button>
       <ul id="favorites-list" style="display:none;"></ul>
@@ -118,7 +117,6 @@
     const API_URL = 'https://gensokyoradio.net/api/station/playing/';
     let audio = new Audio();
     let isPlaying = false;
-    let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
 
     async function fetchSongData() {
       try {
@@ -152,6 +150,7 @@
         }
 
         updateProgressBar(data.SONGTIMES);
+        updateMediaSession(data);
       }
     }
 
@@ -203,39 +202,32 @@
       return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
     }
 
-  document.getElementById('add-favorite').addEventListener('click', () => {
-    const songInfo = document.getElementById('song-info').textContent;
-    const albumArt = document.getElementById('album-art').src.split('/').pop();
-    const streamId = 1; // 固定ストリームID (APIから取得する場合は動的に)
-
-    if (!favorites.some(fav => fav.song === songInfo)) {
-      favorites.push({ song: songInfo, albumArt, streamId });
-      localStorage.setItem('favorites', JSON.stringify(favorites));
-      alert('Added to Favorites!');
-    }
-});
-
-
-    document.getElementById('show-favorites').addEventListener('click', () => {
-      const list = document.getElementById('favorites-list');
-      list.innerHTML = '';
-      favorites.forEach((favorite, index) => {
-        const li = document.createElement('li');
-        li.textContent = favorite.song;
-
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Remove';
-        deleteButton.addEventListener('click', () => {
-          favorites.splice(index, 1);
-          localStorage.setItem('favorites', JSON.stringify(favorites));
-          list.removeChild(li);
+    function updateMediaSession(data) {
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: data.SONGINFO.TITLE,
+          artist: data.SONGINFO.ARTIST,
+          album: data.SONGINFO.ALBUM,
+          artwork: [
+            { src: `https://gensokyoradio.net/images/albums/500/${data.MISC.ALBUMART}`, sizes: '512x512', type: 'image/jpeg' }
+          ]
         });
 
-        li.appendChild(deleteButton);
-        list.appendChild(li);
-      });
-      list.style.display = list.style.display === 'none' ? 'block' : 'none';
-    });
+        navigator.mediaSession.setActionHandler('play', () => {
+          audio.play();
+          isPlaying = true;
+          document.getElementById('play-pause').textContent = 'Pause';
+        });
+        navigator.mediaSession.setActionHandler('pause', () => {
+          audio.pause();
+          isPlaying = false;
+          document.getElementById('play-pause').textContent = 'Play';
+        });
+      }
+    }
+
+    // Initialize
+    updateSongInfo();
   </script>
 </body>
 </html>
